@@ -2,6 +2,7 @@ import os
 from slack import RTMClient
 from slack.errors import SlackApiError
 
+
 @RTMClient.run_on(event='message')
 def say_hello(**payload):
     data = payload['data']
