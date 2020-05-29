@@ -1,15 +1,14 @@
 import os
-from slack import WebClient
-from slack.errors import SlackApiError
+from notification import WebClient
+from notification.errors import SlackApiError
 
 client = WebClient(token=os.environ['SLACK_API_TOKEN'])
 
 try:
-    filepath="./tmp.txt"
-    response = client.files_upload(
-        channels='#random',
-        file=filepath)
-    assert response["file"]  # the uploaded file
+    response = client.chat_postMessage(
+        channel='#random',
+        text="Hello world!")
+    assert response["message"]["text"] == "Hello world!"
 except SlackApiError as e:
     # You will get a SlackApiError if "ok" is False
     assert e.response["ok"] is False
