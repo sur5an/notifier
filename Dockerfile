@@ -19,7 +19,8 @@ RUN \
 
 RUN \
     apt-get install python3 -y \
-    && apt-get install python3-pip -y
+    && apt-get install python3-pip -y \
+    && apt-get install sqlite -y
 
 RUN \
     pip3 install slackclient
