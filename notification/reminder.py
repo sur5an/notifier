@@ -5,6 +5,35 @@ from pathlib import Path
 import document_db
 
 
+class Reminder:
+
+    def __init__(self, input_text):
+        self.input_text = input_text
+        self.user = None
+        self.doc = document_db.Documents()
+
+    def slack_list(self):
+        user_only = False
+        response = "\n```"
+
+        if self.input_text is None or len(self.input_text) == 1 or self.input_text[1] == "users":
+            user_only = True
+        else:
+            self.user = self.input_text[1]
+
+        if user_only:
+            records = self.doc.select_users()
+            records = [str(rec) for rec in records]
+            response += "\n".join(records) + "```"
+        else:
+            recs = self.doc.select_user_records(self.user)
+            for r in recs:
+                r = [str(rec) for rec in r]
+                response += "\n".join(r) + "```\n\n"
+
+        return response
+
+
 def slack_list(inp):
     user_only = False
     user = None
@@ -12,6 +41,7 @@ def slack_list(inp):
         user_only = True
     else:
         user = inp[1]
+
     head, data = read_file()
     resp = ""
     if user_only:
@@ -73,6 +103,7 @@ def read_file():
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
         for row in csv_reader:
+            record = dict()
             row = [i.strip().replace('"', '') for i in row]
             if line_count == 0:
                 heading = row
@@ -89,10 +120,11 @@ def read_file():
                             break
                         except ValueError:
                             continue
-                data.append(row)
+                for i in range(0, len(row)):
+                    record[heading[i]] = row[i]
+                data.append(record)
     return heading, data
 
 
 if __name__ == '__main__':
-    t, d = read_file()
-    document_db.insert_all(d)
+    print(Reminder(["list"]).slack_list())
