@@ -1,40 +1,73 @@
 import os
 from slack import RTMClient
-from slack.errors import SlackApiError
 import reminder
+import document_db
+import traceback
+from conversation import Conversation
 
 commands = {
-    "list": reminder.slack_list
+    "list": reminder.Reminder().slack_list,
+    "add": reminder.Reminder().add_new_reminder
 }
 
 
 @RTMClient.run_on(event='message')
-def say_hello(**payload):
+def listener(**payload):
     data = payload['data']
     web_client = payload['web_client']
     # rtm_client = payload['rtm_client']
     user = data['user']
 
-    msg = f"Hi <@{user}>!\n"
-    channel_id = data['channel']
-    thread_ts = data['ts']
     try:
-        for cmd in commands:
-            if cmd == data['text'].split(":")[0].strip():
-                msg += commands.get(cmd)(data['text'].split(':'))
-    except Exception as e:
-        print(e)
-        msg += e
-    try:
+        msg = f"Hi <@{user}>!\n"
+        channel_id = data['channel']
+        thread_ts = data['ts']
+        conversation_id = data.get('thread_ts')
+        event_ts = data.get('event_ts', 0)
+        text = str(data['text'])
+        match = False
+        if conversation_id is None:
+            conversation_id = thread_ts
+        elif Conversation.active_con.get(conversation_id) is not None:
+            text = Conversation.active_con[conversation_id].get("command")
+
+        if float(conversation_id) + 300.0 < float(event_ts):
+            msg += "`This conversation is expired please start a new conversation` \n `-Thanks`\n"
+        elif len(text.split()) > 1:
+            try:
+                token = text.split()
+                if token[0].strip() == "doc":
+                    for cmd in commands:
+                        if cmd == token[1].strip():
+                            msg += commands.get(cmd)(str(data['text']), conversation_id, user)
+                            match = True
+            except Exception as e:
+                traceback.print_exc()
+                print(f"Got an error inside module: " + str(e))
+                msg = "Something went wrong - you might have found a bug please report it.\n - Thanks"
+            if not match:
+                msg += "`I didn't get you. can you try some thing else.`"
         web_client.chat_postMessage(
             channel=channel_id,
             text=msg,
             thread_ts=thread_ts
         )
-    except SlackApiError as e:
+    except Exception as e:
         # You will get a SlackApiError if "ok" is False
-        print(f"Got an error: {e.response['error']}")
+        traceback.print_exc()
+        print(f"Got an error: " + str(e))
 
 
-rtm_client = RTMClient(token=os.environ["SLACK_API_TOKEN"])
-rtm_client.start()
+def start_db():
+    if not os.path.isfile('documents.db'):
+        document_db.Documents().create_schema()
+
+
+def start_slack():
+    rtm_client = RTMClient(token=os.environ["SLACK_API_TOKEN"])
+    rtm_client.start()
+
+
+if __name__ == '__main__':
+    start_db()
+    start_slack()

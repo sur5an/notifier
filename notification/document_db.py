@@ -40,7 +40,7 @@ class Documents:
     def create_construct(self):
         create = 'CREATE TABLE %s(' % self.TABLE
         cols = list()
-        for k in self.HEAD:
+        for k in self.COLUMNS:
             cols.append("%s %s" % (k, self.TABLE_DETAILS.get(k).get("type")))
         create += ", ".join(cols) + ")"
         return create
@@ -48,9 +48,7 @@ class Documents:
     def insert_construct(self):
         insert = 'INSERT INTO %s (' % self.TABLE
         cols = list()
-        for k in self.HEAD:
-            if str(self.TABLE_DETAILS.get(k).get("type")).find("AUTOINCREMENT") >= 0:
-                continue
+        for k in self.INSERT_COLUMNS:
             cols.append("%s" % k)
         insert += ", ".join(cols) + ")"
         return insert
@@ -58,7 +56,7 @@ class Documents:
     def select_construct(self):
         select = 'select '
         cols = list()
-        for k in self.HEAD:
+        for k in self.COLUMNS:
             cols.append("%s" % k)
         select += ", ".join(cols) + " from %s " % self.TABLE
         return select
@@ -67,7 +65,10 @@ class Documents:
         self.conn = lite.connect(self.DB)
         self.cur = self.conn.cursor()
         self.do_commit = True
-        self.HEAD = sorted(self.TABLE_DETAILS)
+        self.COLUMNS = sorted(self.TABLE_DETAILS)
+        tmp = dict(self.TABLE_DETAILS)
+        del tmp["Id"]
+        self.INSERT_COLUMNS = sorted(tmp)
         self.CREATE = self.create_construct()
         self.INSERT = self.insert_construct()
         self.SELECT = self.select_construct()
@@ -93,20 +94,24 @@ class Documents:
         self.cur.execute(self.DROP)
         self.cur.execute(self.CREATE)
 
-    def insert(self, record):
+    def insert(self, record, commit=True):
         sql = self.INSERT + " VALUES ("
         values = list()
-        for col in sorted(record):
+        for col in sorted(self.INSERT_COLUMNS):
             values.append('"' + record.get(col).replace('"', '\"') + '"')
         sql += ", ".join(values) + ")"
+        print(sql)
         self.execute(sql, False)
+        self.conn.commit()
 
     def insert_all(self, records):
         for record in records:
-            self.insert(record)
+            self.insert(record, False)
+        self.conn.commit()
 
     def select_users(self):
         sql = 'select distinct UserName from %s' % self.TABLE
+        print(sql)
         rc, resp = self.execute(sql)
         records = list()
         for r in resp:
@@ -115,15 +120,16 @@ class Documents:
 
     def select_user_records(self, user):
         sql = '%s where UserName = "%s"' % (self.SELECT, user)
+        print(sql)
         rc, resp = self.execute(sql)
         records = list()
         head_idx = 0
         for r in resp:
             rec = list()
             for i in range(0, len(r)):
-                if self.HEAD[i] == "Id":
+                if self.COLUMNS[i] == "Id":
                     head_idx = i
-                rec.append("%s: %s" % (self.HEAD[i], r[i]))
+                rec.append("%s: %s" % (self.COLUMNS[i], r[i]))
             t = rec[head_idx]
             rec[head_idx] = rec[0]
             rec[0] = t

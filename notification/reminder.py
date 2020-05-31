@@ -3,74 +3,64 @@ from datetime import datetime
 import os
 from pathlib import Path
 import document_db
+from conversation import Conversation
 
 
 class Reminder:
 
-    def __init__(self, input_text):
-        self.input_text = input_text
+    def __init__(self):
         self.user = None
         self.doc = document_db.Documents()
 
-    def slack_list(self):
-        user_only = False
-        response = "\n```"
-
-        if self.input_text is None or len(self.input_text) == 1 or self.input_text[1] == "users":
-            user_only = True
+    def add_new_reminder(self, data, conversation_id, user):
+        if Conversation.is_active_conversation(conversation_id):
+            next_question = Conversation.get_open_question_response(conversation_id, str(data))
+            if next_question is None:
+                self.doc.insert(Conversation.active_con.get(conversation_id))
+                del Conversation.active_con[conversation_id]
+                response = ":floppy_disk: _Document inserted_"
+            else:
+                extra = ""
+                if next_question == "DateOfExpire":
+                    extra = " (format MM/DD/YYYY - Eg 05/31/2020 will be may 5th of 2020)"
+                response = "Please give input for %s%s: " % (next_question, extra)
         else:
-            self.user = self.input_text[1]
-
-        if user_only:
-            records = self.doc.select_users()
-            records = [str(rec) for rec in records]
-            response += "\n".join(records) + "```"
-        else:
-            recs = self.doc.select_user_records(self.user)
-            for r in recs:
-                r = [str(rec) for rec in r]
-                response += "\n".join(r) + "```\n\n"
-
+            Conversation.active_con[conversation_id] = {"command": data}
+            for column in self.doc.INSERT_COLUMNS:
+                Conversation.active_con[conversation_id][column] = None
+            next_question = Conversation.get_open_question_response(conversation_id, None)
+            extra = ""
+            if next_question == "DateOfExpire":
+                extra = " (format MM/DD/YYYY - Eg 05/31/2020 will be may 5th of 2020)"
+            response = "Please give input for %s%s: " % (next_question, extra)
         return response
 
+    def slack_list(self, data, conversation_id, user):
+        input_text = data.split()
+        response = "\n```"
 
-def slack_list(inp):
-    user_only = False
-    user = None
-    if inp is None or len(inp) == 1 or inp[1] == "users":
-        user_only = True
-    else:
-        user = inp[1]
+        if input_text is None or len(input_text) == 2:
+            self.user = "users"
+        else:
+            self.user = input_text[2]
 
-    head, data = read_file()
-    resp = ""
-    if user_only:
-        resp += "\n```"
-    users = set()
-    for row in data:
-        cnt = 0
-        resp_row = ""
-        if not user_only:
-            resp_row += "\n```"
-        do_add = True
-        for element in row:
-            if user_only:
-                if head[cnt].strip() == "User":
-                    users.add(element.strip())
-                    do_add = False
+        if self.user == "users":
+            records = self.doc.select_users()
+            if records is None or len(records) == 0:
+                response = "`No reminders - every thing is clean` :beach_with_umbrella:"
             else:
-                if head[cnt].strip() == "User" and \
-                        element.strip().replace('"', "").lower() != user.replace('"', "").lower():
-                    do_add = False
-                    break
-                resp_row += "\n%s: %s" % (str(head[cnt]).strip(), str(element).strip())
-            cnt += 1
-        if do_add:
-            resp += resp_row
-            resp += "```"
-    if user_only:
-        resp += "\n".join(users) + "```"
-    return resp
+                records = [str(rec) for rec in records]
+                response += "Please give doc list <username> With username as one of the below.\n\n" + "\n".join(records) + "```\n\n"
+        else:
+            recs = self.doc.select_user_records(self.user)
+            if recs is None or len(recs) == 0:
+                response = "`No reminders - every thing is clean` :beach_with_umbrella:"
+            else:
+                for r in recs:
+                    r = [str(rec) for rec in r]
+                    response += "\n".join(r) + "```\n\n"
+
+        return response
 
 
 def write_file(h, data):
@@ -125,6 +115,3 @@ def read_file():
                 data.append(record)
     return heading, data
 
-
-if __name__ == '__main__':
-    print(Reminder(["list"]).slack_list())

@@ -1,6 +1,6 @@
-docker build .
-docker tag 2b4318682957 notifier
-docker run --env SLACK_API_TOKEN=<Pass> -d -t notifier
+docker build -t notifier .
+docekr rm notifier
+docker run --name notifier --env SLACK_API_TOKEN=<pass> -d -t notifier
 
 apt install software-properties-common mariadb-server mariadb-client
 /etc/init.d/mysql stop
