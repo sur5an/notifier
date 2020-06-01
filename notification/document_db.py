@@ -118,7 +118,7 @@ class Documents:
         return records
 
     def delete_document(self, doc_id):
-        sql = 'delete %s where Id=%s' % (self.TABLE, doc_id)
+        sql = 'delete from %s where Id=%s' % (self.TABLE, doc_id)
         self.execute(sql)
         self.conn.commit()
 
