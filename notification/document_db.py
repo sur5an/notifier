@@ -2,7 +2,7 @@ import sqlite3 as lite
 
 
 class Documents:
-    DB = 'documents.db'
+    DB = 'db/documents.db'
     TABLE = 'documents'
     DROP: str = 'DROP TABLE IF EXISTS %s' % TABLE
     TABLE_DETAILS = {
@@ -74,14 +74,19 @@ class Documents:
         self.SELECT = self.select_construct()
 
     def __del__(self):
-        if self.conn is not None:
-            try:
+        try:
+            if self.conn is not None:
                 if self.do_commit:
                     self.conn.commit()
                 else:
                     self.conn.rollback()
-            finally:
-                self.conn.close()
+        except:
+            pass
+        finally:
+            try:
+                 self.conn.close()
+            except:
+                pass
 
     def execute(self, sql, fetch=True):
         self.cur.execute(sql)
