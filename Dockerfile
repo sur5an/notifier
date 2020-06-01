@@ -33,3 +33,4 @@ COPY notification/*.*  /var/notification/
 WORKDIR /var/notification/
 
 CMD ["python3","listen.py"]
+#CMD ["/bin/bash"]
