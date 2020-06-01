@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import document_db
 from conversation import Conversation
+import traceback
 
 
 class Reminder:
@@ -11,6 +12,24 @@ class Reminder:
     def __init__(self):
         self.user = None
         self.doc = document_db.Documents()
+
+    def remove_reminder(self, data, conversation_id, user):
+        input_text = data.split()
+        try:
+            if input_text is None or len(input_text) != 3:
+                response = "`please provide the id of reminder to delete it`"
+            else:
+                if not self.doc.is_document_present(input_text[2]):
+                    response = "`please provide a valid id of reminder to delete it`"
+                else:
+                    self.doc.delete_document(int(input_text[2]))
+                    response = "`deleted successfully`"
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+            response = "`please provide a valid id of reminder to delete it`"
+
+        return response
 
     def add_new_reminder(self, data, conversation_id, user):
         if Conversation.is_active_conversation(conversation_id):

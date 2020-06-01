@@ -7,7 +7,8 @@ from conversation import Conversation
 
 commands = {
     "list": reminder.Reminder().slack_list,
-    "add": reminder.Reminder().add_new_reminder
+    "add": reminder.Reminder().add_new_reminder,
+    "delete": reminder.Reminder().remove_reminder
 }
 
 
@@ -36,9 +37,9 @@ def listener(**payload):
         elif len(text.split()) > 1:
             try:
                 token = text.split()
-                if token[0].strip() == "doc":
+                if token[0].strip().lower() == "doc":
                     for cmd in commands:
-                        if cmd == token[1].strip():
+                        if cmd == token[1].strip().lower():
                             msg += commands.get(cmd)(str(data['text']), conversation_id, user)
                             match = True
             except Exception as e:

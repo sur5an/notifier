@@ -111,12 +111,24 @@ class Documents:
 
     def select_users(self):
         sql = 'select distinct UserName from %s' % self.TABLE
-        print(sql)
+
         rc, resp = self.execute(sql)
         records = list()
         for r in resp:
             records.append(r[0])
         return records
+
+    def delete_document(self, doc_id):
+        sql = 'delete %s where Id=%s' % (self.TABLE, doc_id)
+        self.execute(sql)
+
+    def is_document_present(self, doc_id):
+        sql = 'select * from %s where Id=%s' % (self.TABLE, doc_id)
+
+        rc, resp = self.execute(sql, False)
+        if len(resp) == 0:
+            return False
+        return True
 
     def select_user_records(self, user):
         sql = '%s where UserName = "%s"' % (self.SELECT, user)
