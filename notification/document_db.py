@@ -100,7 +100,6 @@ class Documents:
         for col in sorted(self.INSERT_COLUMNS):
             values.append('"' + record.get(col).replace('"', '\"') + '"')
         sql += ", ".join(values) + ")"
-        print(sql)
         self.execute(sql, False)
         self.conn.commit()
 
@@ -121,11 +120,12 @@ class Documents:
     def delete_document(self, doc_id):
         sql = 'delete %s where Id=%s' % (self.TABLE, doc_id)
         self.execute(sql)
+        self.conn.commit()
 
     def is_document_present(self, doc_id):
         sql = 'select * from %s where Id=%s' % (self.TABLE, doc_id)
 
-        rc, resp = self.execute(sql, False)
+        rc, resp = self.execute(sql)
         if len(resp) == 0:
             return False
         return True
