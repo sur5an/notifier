@@ -29,7 +29,7 @@ RUN \
 
 
 RUN mkdir -p /var/notification/
-COPY notification/*.*  /var/notification/
+COPY notification/*  /var/notification/
 WORKDIR /var/notification/
 
 CMD ["python3","listen.py"]

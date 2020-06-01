@@ -60,8 +60,6 @@ def listener(**payload):
 
 
 def start_db():
-    if not os.path.isfile('documents.db'):
-        document_db.Documents().create_schema()
     try:
         document_db.Documents().select_users()
     except:
