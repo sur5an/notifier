@@ -1,9 +1,12 @@
-import os
+import os, sys
+import time
 from slack import RTMClient
 import reminder
 import document_db
 import traceback
 from conversation import Conversation
+from multiprocessing import Process
+from notify import Notify
 
 commands = {
     "list": reminder.Reminder().slack_list,
@@ -71,6 +74,21 @@ def start_slack():
     rtm_client.start()
 
 
+def alert_cron():
+    while True:
+        Notify().check_notification()
+        time.sleep(10)
+
+
 if __name__ == '__main__':
     start_db()
-    start_slack()
+    method_list = [start_slack, alert_cron]
+    process_list = []
+    for m in method_list:
+        p = Process(target=m, args=())
+        p.start()
+        process_list.append(p)
+
+    for p in process_list:
+        if not p.is_alive():
+            sys.exit(-1)

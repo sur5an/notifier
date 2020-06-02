@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 import os
 from pathlib import Path
-import document_db
+from document_db import Documents
 from conversation import Conversation
 import traceback
 
@@ -11,7 +11,7 @@ class Reminder:
 
     def __init__(self):
         self.user = None
-        self.doc = document_db.Documents()
+        self.doc = Documents()
 
     def remove_reminder(self, data, conversation_id, user):
         input_text = data.split()
@@ -49,14 +49,17 @@ class Reminder:
                 Conversation.active_con[conversation_id][column] = None
             next_question = Conversation.get_open_question_response(conversation_id, None)
             extra = ""
-            if next_question == "DateOfExpire":
-                extra = " (format MM/DD/YYYY - Eg 05/31/2020 will be may 5th of 2020)"
+            if str(next_question).lower().find("date") >= 0:
+                extra = " (format MM/DD/YYYY - Eg 05/31/2020     will be may 5th of 2020)"
+            elif str(next_question).lower() in ["RemindStart", "RemindFrequency"]:
+                extra = " (format 1M for 1 month, 3M for 3 Months, 1W for one week, 1Y for one year - " \
+                        "only M/W/Y is supported)"
             response = "Please give input for %s%s: " % (next_question, extra)
         return response
 
     def slack_list(self, data, conversation_id, user):
         input_text = data.split()
-        response = "\n```"
+        response = "\n"
 
         if input_text is None or len(input_text) == 2:
             self.user = "users"
@@ -69,16 +72,34 @@ class Reminder:
                 response = "`No reminders - every thing is clean` :beach_with_umbrella:"
             else:
                 records = [str(rec) for rec in records]
-                response += "Please give doc list <username> With username as one of the below.\n\n" + "\n".join(records) + "```\n\n"
+                response += "```Please give doc list <username> With username as one of the below.\n\n" + "\n".join(records) + "```\n\n"
         else:
             recs = self.doc.select_user_records(self.user)
             if recs is None or len(recs) == 0:
                 response = "`No reminders - every thing is clean` :beach_with_umbrella:"
             else:
+                r, e = Documents().get_records_to_notify(datetime.combine(datetime.today(), datetime.min.time()))
+                expire_ids = list()
+                for ex_rec in e:
+                    print(ex_rec)
+                    expire_ids.append(ex_rec["Id"])
                 for r in recs:
-                    r = [str(rec) for rec in r]
-                    response += "\n".join(r) + "```\n\n"
-
+                    mark_red = False
+                    if r["Id"] in expire_ids:
+                        mark_red = True
+                        response += "*Id*: `%s`\n" % str(r["Id"])
+                    else:
+                        response += "*Id*: %s\n" % str(r["Id"])
+                    for k in r:
+                        if k == "Id":
+                            continue
+                        if mark_red:
+                            response += "*%s*: `%s`\n" % (k, str(r[k]))
+                        else:
+                            response += "*%s*: %s\n" % (k, str(r[k]))
+                    if r["Id"] in expire_ids:
+                        response += "`"
+                    response += "\n"
         return response
 
 
@@ -103,7 +124,7 @@ def write_file(h, data):
 
 
 def read_file():
-    formats = ["%m/%d/%Y", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y %H"]
+    formats = ["%m/%d/%Y"]
     file_name = 'db.txt'
     heading = list()
     data = list()
@@ -133,4 +154,3 @@ def read_file():
                     record[heading[i]] = row[i]
                 data.append(record)
     return heading, data
-

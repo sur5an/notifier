@@ -1,4 +1,6 @@
 import sqlite3 as lite
+from datetime import datetime
+from datetime import timedelta
 
 
 class Documents:
@@ -84,7 +86,7 @@ class Documents:
             pass
         finally:
             try:
-                 self.conn.close()
+                self.conn.close()
             except:
                 pass
 
@@ -100,13 +102,33 @@ class Documents:
         self.cur.execute(self.CREATE)
 
     def insert(self, record, commit=True):
+        formats = ["%m/%d/%Y", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y %H"]
         sql = self.INSERT + " VALUES ("
         values = list()
         for col in sorted(self.INSERT_COLUMNS):
-            values.append('"' + record.get(col).replace('"', '\"') + '"')
+            val = str(record.get(col))
+            if col.lower().find("date") >= 0 or self.TABLE_DETAILS.get(col).get("type").find("date") >= 0:
+                for f in formats:
+                    try:
+                        val = str(datetime.strptime(val.strip().replace('"', ''), f))
+                        break
+                    except ValueError:
+                        continue
+            values.append('"' + val.replace('"', '\"') + '"')
         sql += ", ".join(values) + ")"
         self.execute(sql, False)
-        self.conn.commit()
+        if commit:
+            self.conn.commit()
+
+    @staticmethod
+    def month_delta(date, delta):
+        m, y = (date.month + delta) % 12, date.year + (date.month + delta - 1) // 12
+        if not m:
+            m = 12
+        da = min(date.day, [31,
+                            29 if y % 4 == 0 and not y % 400 == 0 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][
+            m - 1])
+        return date.replace(day=da, month=m, year=y)
 
     def insert_all(self, records):
         for record in records:
@@ -118,14 +140,65 @@ class Documents:
 
         rc, resp = self.execute(sql)
         records = list()
-        for r in resp:
-            records.append(r[0])
+        for a in resp:
+            records.append(a[0])
         return records
 
     def delete_document(self, doc_id):
         sql = 'delete from %s where Id=%s' % (self.TABLE, doc_id)
         self.execute(sql)
         self.conn.commit()
+
+    @staticmethod
+    def should_notify(fn, num, key, bt):
+        n = fn
+        while n < bt:
+            if n == bt:
+                return True
+            elif key == "M":
+                n = Documents.month_delta(n, num)
+            elif key == "W":
+                n = n + timedelta(days=7 * num)
+            elif key == "Y":
+                n = Documents.month_delta(n, num * 12)
+        if n == bt:
+            return True
+        return False
+
+    def get_records_to_notify(self, base_time):
+        recs = list()
+        expired = list()
+        sql = '%s' % self.SELECT
+        rc, resp = self.execute(sql)
+        for y in resp:
+            record = dict()
+            for i in range(0, len(y)):
+                record[self.COLUMNS[i]] = y[i]
+            d = datetime.strptime(y[0], "%Y-%m-%d %H:%M:%S")
+            if d <= base_time:
+                recs.append(record)
+                expired.append(record)
+                continue
+            expire_num = int(y[5][:-1])
+            expire_key = y[5][-1:]
+            alert_num = int(y[4][:-1])
+            alert_key = y[4][-1:]
+            ready_for_notification = False
+            first_notification = 0
+            if expire_key == "M" and Documents.month_delta(d, -expire_num) <= base_time:
+                ready_for_notification = True
+                first_notification = base_time - timedelta(
+                    days=(base_time - Documents.month_delta(d, -expire_num)).days)
+            elif expire_key == "W" and (d - timedelta(days=7 * expire_num)) <= base_time:
+                ready_for_notification = True
+                first_notification = base_time - timedelta(days=(base_time - (d - timedelta(days=7 * expire_num))).days)
+            elif expire_key == "Y" and Documents.month_delta(d, -expire_num * 12) <= base_time:
+                ready_for_notification = True
+                first_notification = base_time - timedelta(
+                    days=(base_time - Documents.month_delta(d, -expire_num * 12)).days)
+            if ready_for_notification and Documents.should_notify(first_notification, alert_num, alert_key, base_time):
+                recs.append(record)
+        return recs, expired
 
     def is_document_present(self, doc_id):
         sql = 'select * from %s where Id=%s' % (self.TABLE, doc_id)
@@ -137,22 +210,81 @@ class Documents:
 
     def select_user_records(self, user):
         sql = '%s where UserName = "%s"' % (self.SELECT, user)
-        print(sql)
         rc, resp = self.execute(sql)
         records = list()
-        head_idx = 0
-        for r in resp:
-            rec = list()
-            for i in range(0, len(r)):
-                if self.COLUMNS[i] == "Id":
-                    head_idx = i
-                rec.append("%s: %s" % (self.COLUMNS[i], r[i]))
-            t = rec[head_idx]
-            rec[head_idx] = rec[0]
-            rec[0] = t
-            records.append(rec)
+        for k in resp:
+            record = dict()
+            for i in range(0, len(k)):
+                record[self.COLUMNS[i]] = k[i]
+            records.append(record)
         return records
 
 
 if __name__ == '__main__':
     Documents().create_schema()
+    rec = {
+        "DocumentName": "test1",
+        "DateOfExpire": "07/02/2021",
+        "UserName": "Raja",
+        "DocumentDescription": "desc",
+        "RemindStart": "2Y",
+        "RemindFrequency": "1M"
+    }
+    Documents().insert(rec, True)
+    rec = {
+        "DocumentName": "test2",
+        "DateOfExpire": "06/19/2020",
+        "UserName": "Raja",
+        "DocumentDescription": "desc",
+        "RemindStart": "1M",
+        "RemindFrequency": "2W"
+    }
+    Documents().insert(rec, True)
+    rec = {
+        "DocumentName": "test3",
+        "DateOfExpire": "06/02/2022",
+        "UserName": "Raja",
+        "DocumentDescription": "desc",
+        "RemindStart": "2Y",
+        "RemindFrequency": "1M"
+    }
+    Documents().insert(rec, True)
+    rec = {
+        "DocumentName": "test4",
+        "DateOfExpire": "06/05/2020",
+        "UserName": "Raja",
+        "DocumentDescription": "desc",
+        "RemindStart": "1W",
+        "RemindFrequency": "2M"
+    }
+    Documents().insert(rec, True)
+    r = {
+        "DocumentName": "test5",
+        "DateOfExpire": "06/25/2020",
+        "UserName": "Raja",
+        "DocumentDescription": "desc",
+        "RemindStart": "2W",
+        "RemindFrequency": "2Y"
+    }
+    Documents().insert(rec, True)
+    rec = {
+        "DocumentName": "test6",
+        "DateOfExpire": "06/25/2021",
+        "UserName": "Raja",
+        "DocumentDescription": "desc",
+        "RemindStart": "2Y",
+        "RemindFrequency": "2W"
+    }
+    Documents().insert(rec, True)
+    rec = {
+        "DocumentName": "test7",
+        "DateOfExpire": "02/29/2020",
+        "UserName": "Raja",
+        "DocumentDescription": "desc",
+        "RemindStart": "1Y",
+        "RemindFrequency": "2W"
+    }
+    Documents().insert(rec, True)
+    s, d = Documents().get_records_to_notify(datetime.combine(datetime.today(), datetime.min.time()))
+    for rec in s:
+        print(rec)
