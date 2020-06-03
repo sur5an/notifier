@@ -75,6 +75,7 @@ def start_slack():
 
 
 def alert_cron():
+    Notify.setup_email()
     while True:
         Notify().check_notification()
         time.sleep(60*60*12)

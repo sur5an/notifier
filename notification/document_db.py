@@ -278,7 +278,7 @@ if __name__ == '__main__':
     Documents().insert(rec, True)
     rec = {
         "DocumentName": "test7",
-        "DateOfExpire": "02/29/2020",
+        "DateOfExpire": "06/03/2020",
         "UserName": "Raja",
         "DocumentDescription": "desc",
         "RemindStart": "1Y",
