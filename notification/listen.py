@@ -7,6 +7,7 @@ import traceback
 from conversation import Conversation
 from multiprocessing import Process
 from notify import Notify
+import simple_server
 
 commands = {
     "list": reminder.Reminder().slack_list,
@@ -70,6 +71,9 @@ def start_db():
 
 
 def start_slack():
+    if "SLACK_API_TOKEN" not in os.environ or "SLACK_API_TOKEN" not in os.environ:
+        Notify.disable_slack()
+        return
     rtm_client = RTMClient(token=os.environ["SLACK_API_TOKEN"])
     rtm_client.start()
 
@@ -83,13 +87,8 @@ def alert_cron():
 
 if __name__ == '__main__':
     start_db()
-    method_list = [start_slack, alert_cron]
-    process_list = []
+    method_list = [start_slack, alert_cron, simple_server.start_server]
     for m in method_list:
-        p = Process(target=m, args=())
+        p = Process(target=m, args=(), name=str(m.__name__))
+        print(p.name)
         p.start()
-        process_list.append(p)
-
-    for p in process_list:
-        if not p.is_alive():
-            sys.exit(-1)

@@ -13,6 +13,7 @@ class SlackNotification:
             response = client.chat_postMessage(
                 channel='#%s' % channel,
                 text="%s" % message)
+            print("Send message to slack: %s" % response.get("ok"))
         except SlackApiError as e:
             print(f"Got an error: {e.response['error']}")
 

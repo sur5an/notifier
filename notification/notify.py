@@ -14,11 +14,9 @@ class Notify:
 
     @staticmethod
     def setup_email():
+        if "EMAIL_ADDRESS" not in os.environ or "EMAIL_PASSWORD" not in os.environ:
+            Notify.disable_email()
         if Notify.EMAIL_NOTIFICATION_ENABLED:
-            if "EMAIL_ADDRESS" not in os.environ or "EMAIL_PASSWORD" not in os.environ:
-                print("disabling email alert as email is not sent")
-                Notify.disable_email()
-                return
             email_address = os.environ["EMAIL_ADDRESS"]
             Notify.EMAIL_PASSWORD = os.environ["EMAIL_PASSWORD"]
             os.environ["EMAIL_PASSWORD"] = "reset"
@@ -37,6 +35,10 @@ class Notify:
 
     def __init__(self):
         self.doc = Documents()
+        if "EMAIL_ADDRESS" not in os.environ or "EMAIL_PASSWORD" not in os.environ:
+            Notify.disable_email()
+        if "SLACK_API_TOKEN" not in os.environ or "SLACK_API_TOKEN" not in os.environ:
+            Notify.disable_slack()
 
     @staticmethod
     def disable_slack():
@@ -52,23 +54,27 @@ class Notify:
 
     @staticmethod
     def get_email_message(records):
-        if not Notify.SLACK_NOTIFICATION_ENABLED or len(records) == 0:
+        if not Notify.EMAIL_NOTIFICATION_ENABLED:
+            return None
+
+        if len(records) == 0:
             return "No Alerts for Now"
-        response_message = '<p style="color:red;"> ALERT - Records expiring or expired. </p>' \
+        response_message = '<h1> ALERT - Records expiring or expired. </h1>' \
                            '<br/><p><b>please check the following documents</p></b><br/>'
-        response_message += '<table><tr><th>Column</th><th>Details</th></tr>'
+        response_message += '<table id="t01"><tr><th>Name</th><th>DocumentName</th></tr>'
         for record in records:
             response_message += "<tr><td>%s</td><td>%s</td></tr>" % (record["UserName"], record["DocumentName"])
         response_message += '</table>'
         return response_message
 
     @staticmethod
-    def get_slack_message(records):
+    def get_slack_message(records, cd):
         if not Notify.SLACK_NOTIFICATION_ENABLED:
             return None
         if len(records) == 0:
-            return ":large_blue_circle: No Alerts for Now"
-        response_message = ":red_circle: `ALERT` ```Records expiring or expired. \nplease check the documents```\n"
+            return ":large_blue_circle: *%s*: No Alerts for Now\n" % cd
+        response_message = ":red_circle: *%s*: `ALERT` \n _Records expiring or expired_" \
+                           "\n _please check the following documents_ \n\n" % cd
         for record in records:
             response_message += "*%s*: _%s_\n" % (record["UserName"], record["DocumentName"])
         return response_message
@@ -82,13 +88,14 @@ class Notify:
             return
 
         Notify.LAST_NOTIFY_DATE = check_date
-        slack_msg = Notify.get_slack_message(to_notify)
+        slack_msg = Notify.get_slack_message(to_notify, str(check_date).split()[0])
         if slack_msg is not None:
             SlackNotification.notify("notifications", slack_msg)
 
         email_msg = Notify.get_email_message(to_notify)
         if email_msg is not None:
-            EMailNotification.send_email(email_msg, os.environ["EMAIL_ADDRESS"], str(check_date), Notify.EMAIL_PASSWORD)
+            EMailNotification.send_email(email_msg, os.environ["EMAIL_ADDRESS"], str(check_date).split()[0],
+                                         Notify.EMAIL_PASSWORD)
 
 
 def main():
