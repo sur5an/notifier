@@ -77,7 +77,7 @@ def start_slack():
 def alert_cron():
     while True:
         Notify().check_notification()
-        time.sleep(10)
+        time.sleep(60*60*12)
 
 
 if __name__ == '__main__':

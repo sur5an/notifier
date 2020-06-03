@@ -4,28 +4,30 @@ from slack_notification import SlackNotification
 
 
 class Notify:
-    ENABLE_SLACK = True
-    ENABLE_EMAIL = True
-    ENABLE_SMS = True
+    SLACK_NOTIFICATION_ENABLED = True
+    EMAIL_NOTIFICATION_ENABLED = True
+    SMS_NOTIFICATION_ENABLED = True
+
+    LAST_NOTIFY_DATE = None
 
     def __init__(self):
         self.doc = Documents()
 
     @staticmethod
     def disable_slack():
-        Notify.ENABLE_SLACK = False
+        Notify.SLACK_NOTIFICATION_ENABLED = False
 
     @staticmethod
     def disable_email():
-        Notify.ENABLE_EMAIL = False
+        Notify.EMAIL_NOTIFICATION_ENABLED = False
 
     @staticmethod
     def disable_sms():
-        Notify.ENABLE_SMS = False
+        Notify.SMS_NOTIFICATION_ENABLED = False
 
     @staticmethod
     def get_slack_message(records):
-        if len(records) == 0:
+        if not Notify.SLACK_NOTIFICATION_ENABLED or len(records) == 0:
             return None
         response_message = ":red_circle: `ALERT` ```Records expiring or expired. \nplease check the documents```\n"
         for record in records:
@@ -33,8 +35,13 @@ class Notify:
         return response_message
 
     def check_notification(self):
-        to_notify, already_expired = \
-            self.doc.get_records_to_notify(datetime.combine(datetime.today(), datetime.min.time()))
+        check_date = datetime.combine(datetime.today(), datetime.min.time())
+        to_notify, already_expired = self.doc.get_records_to_notify(check_date)
+
+        if len(to_notify) <= 0 or check_date == Notify.LAST_NOTIFY_DATE:
+            return
+
+        Notify.LAST_NOTIFY_DATE = check_date
         slack_msg = Notify.get_slack_message(to_notify)
         if slack_msg is not None:
             SlackNotification.notify("notifications", slack_msg)
