@@ -106,19 +106,24 @@ class Documents:
         self.execute(sql)
         self.conn.commit()
 
-    def insert(self, record, commit=True):
+    @staticmethod
+    def format_date(in_val):
         formats = ["%m/%d/%Y", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y %H"]
+        for f in formats:
+            try:
+                ret_val = str(datetime.strptime(in_val.strip().replace('"', ''), f))
+                return ret_val
+            except ValueError:
+                continue
+        return in_val
+
+    def insert(self, record, commit=True):
         sql = self.INSERT + " VALUES ("
         values = list()
         for col in sorted(self.INSERT_COLUMNS):
             val = str(record.get(col))
             if col.lower().find("date") >= 0 or self.TABLE_DETAILS.get(col).get("type").find("date") >= 0:
-                for f in formats:
-                    try:
-                        val = str(datetime.strptime(val.strip().replace('"', ''), f))
-                        break
-                    except ValueError:
-                        continue
+                val = Documents.format_date(val)
             values.append('"' + val.replace('"', '\"') + '"')
         sql += ", ".join(values) + ")"
         self.execute(sql, False)
@@ -179,8 +184,8 @@ class Documents:
             record = dict()
             for i in range(0, len(y)):
                 record[self.COLUMNS[i]] = y[i]
-            d = datetime.strptime(y[0], "%Y-%m-%d %H:%M:%S")
-            if d <= base_time:
+            formatted_date = Documents.format_date(y[0])
+            if formatted_date <= base_time:
                 recs.append(record)
                 expired.append(record)
                 continue
@@ -190,17 +195,17 @@ class Documents:
             alert_key = y[4][-1:]
             ready_for_notification = False
             first_notification = 0
-            if expire_key == "M" and Documents.month_delta(d, -expire_num) <= base_time:
+            if expire_key == "M" and Documents.month_delta(formatted_date, -expire_num) <= base_time:
                 ready_for_notification = True
                 first_notification = base_time - timedelta(
-                    days=(base_time - Documents.month_delta(d, -expire_num)).days)
-            elif expire_key == "W" and (d - timedelta(days=7 * expire_num)) <= base_time:
+                    days=(base_time - Documents.month_delta(formatted_date, -expire_num)).days)
+            elif expire_key == "W" and (formatted_date - timedelta(days=7 * expire_num)) <= base_time:
                 ready_for_notification = True
-                first_notification = base_time - timedelta(days=(base_time - (d - timedelta(days=7 * expire_num))).days)
-            elif expire_key == "Y" and Documents.month_delta(d, -expire_num * 12) <= base_time:
+                first_notification = base_time - timedelta(days=(base_time - (formatted_date - timedelta(days=7 * expire_num))).days)
+            elif expire_key == "Y" and Documents.month_delta(formatted_date, -expire_num * 12) <= base_time:
                 ready_for_notification = True
                 first_notification = base_time - timedelta(
-                    days=(base_time - Documents.month_delta(d, -expire_num * 12)).days)
+                    days=(base_time - Documents.month_delta(formatted_date, -expire_num * 12)).days)
             if ready_for_notification and Documents.should_notify(first_notification, alert_num, alert_key, base_time):
                 recs.append(record)
         return recs, expired
