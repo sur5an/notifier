@@ -2,6 +2,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 from document_db import Documents
 import json
+from cgi import parse_header, parse_multipart
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -11,8 +12,30 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if parsed_path.path == "/all":
             self.write_json(Documents().select_all())
             return
+        if parsed_path.path == "/" or str(parsed_path.path).endswith("html")\
+                or str(parsed_path.path).endswith(".js"):
+            self.default()
 
-        self.default()
+    def do_POST(self):
+        parsed_path = urlparse(self.path)
+        if parsed_path.path != "/addDoc" and parsed_path.path != "/deleteDoc":
+            self.write_response("failed")
+            return
+        ctype, pdict = parse_header(self.headers['content-type'])
+        if ctype == 'multipart/form-data':
+            post_vars = parse_multipart(self.rfile, pdict)
+        elif ctype == 'application/x-www-form-urlencoded' or ctype == "application/json":
+            length = int(self.headers['content-length'])
+            post_vars = json.loads(self.rfile.read(length))
+        else:
+            self.write_response("failed")
+            return
+        if parsed_path.path == "/addDoc":
+            Documents().insert(post_vars)
+        elif parsed_path.path == "/deleteDoc":
+            Documents().delete(post_vars["id"])
+
+        self.write_response("ok")
 
     def write_json(self, data):
         self.send_response(200)

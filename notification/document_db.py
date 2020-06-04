@@ -101,6 +101,11 @@ class Documents:
         self.cur.execute(self.DROP)
         self.cur.execute(self.CREATE)
 
+    def delete(self, doc_id):
+        sql = "delete from %s where Id=%s" % (self.TABLE, doc_id)
+        self.execute(sql)
+        self.conn.commit()
+
     def insert(self, record, commit=True):
         formats = ["%m/%d/%Y", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y %H"]
         sql = self.INSERT + " VALUES ("
@@ -220,7 +225,7 @@ class Documents:
         return records
 
     def select_all(self):
-        select_sql = '%s order by Id' % self.SELECT
+        select_sql = '%s order by Id desc' % self.SELECT
         rc, resp = self.execute(select_sql)
         records = list()
         for k in resp:

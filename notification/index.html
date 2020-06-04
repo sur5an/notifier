@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <html>
 <head>
     <style>
@@ -10,7 +10,7 @@
         }
 
         .hero-image {
-            background-image: linear-gradient(rgba(211, 16, 16, 0.5), rgba(0, 0, 0, 0.5)), url("sun.jpg");
+            background-image: linear-gradient(rgba(211, 16, 16, 0.5), rgba(0, 0, 0, 0.5)), url("./sun.jpg");
             height: 100%;
             background-position: center;
             background-repeat: no-repeat;
@@ -27,6 +27,77 @@
 <body onload="getAllData()">
 <script>
 
+    function save(value) {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                location.reload();
+            }
+        };
+
+        xhr.open("POST", "/addDoc", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify(value));
+    }
+
+    function deleteRecord(value) {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                location.reload();
+            }
+        };
+
+        xhr.open("POST", "/deleteDoc", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify(value));
+    }
+
+    function verifyAndDelete(docId) {
+        var did = document.getElementById(docId).value.trim();
+        if(confirm("Do you really want to delete record " + String(did))) {
+            deleteRecord({"id": did});
+        }
+    }
+
+    function verifyAndSave(){
+        if(!document.getElementById('dname').value.trim().length){
+            alert("Please enter the document Name");
+            return
+        }
+        else if(!document.getElementById('uname').value.trim().length){
+            alert("Please enter the user Name");
+            return
+        }
+        else if(!document.getElementById('ddesc').value.trim().length){
+            alert("Please enter the document description");
+            return
+        }
+        else if(document.getElementById('ded').value == null ||
+            !document.getElementById('ded').value.trim().length){
+            alert("Please enter valid date of expire");
+            return
+        }
+        else if(document.getElementById('rfnum').value == null ||
+            !document.getElementById('rfnum').value.trim().length){
+            alert("Please enter the remind frequency");
+            return
+        }
+        else if(document.getElementById('rsnum').value == null ||
+            !document.getElementById('rsnum').value.trim().length){
+            alert("Please enter the remind start");
+            return
+        }
+        var value = {
+            "DocumentName": document.getElementById('dname').value.trim(),
+            "UserName": document.getElementById('uname').value.trim(),
+            "DocumentDescription": document.getElementById('ddesc').value.trim(),
+            "DateOfExpire": document.getElementById('ded').value.trim(),
+            "RemindFrequency": document.getElementById('rfnum').value.trim(),
+            "RemindStart": document.getElementById('rsnum').value.trim()
+        };
+        save(value)
+    }
 
     function getAllData() {
         var url = "/all";
@@ -50,20 +121,22 @@
             var cell5 = row.insertCell(4);
             var cell6 = row.insertCell(5);
             var cell7 = row.insertCell(6);
-
+            var cell8 = row.insertCell(7);
             cell1.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
-                'type="text" name="cell_' + String(d) + '" value="' + String(li.DocumentName) + '" readonly>';
+                'type="text" id="id_' + String(d) + '" value="' + String(li.Id) + '" readonly>';
             cell2.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
-                'type="text" name="cell_' + String(d) + '" value="' + String(li.UserName) + '" readonly>';
+                'type="text" id="dn_' + String(d) + '" value="' + String(li.DocumentName) + '" readonly>';
             cell3.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
-                'type="text" name="cell_' + String(d) + '" value="' + String(li.DocumentDescription) + '" readonly>';
+                'type="text" id="un_' + String(d) + '" value="' + String(li.UserName) + '" readonly>';
             cell4.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
-                'type="text" name="cell_' + String(d) + '" value="' + String(li.DateOfExpire) + '" readonly>' ;
+                'type="text" id="dd_' + String(d) + '" value="' + String(li.DocumentDescription) + '" readonly>';
             cell5.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
-                'type="text" name="cell_' + String(d) + '" value="' + String(li.RemindFrequency) + '" readonly>';
+                'type="text" id="doe_' + String(d) + '" value="' + String(li.DateOfExpire) + '" readonly>' ;
             cell6.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
-                'type="text" name="cell_' + String(d) + '" value="' + String(li.RemindStart) + '" readonly>';
-            cell7.innerHTML = '<button type="button" onclick="alert(\'Delete!\')">Delete!</button>';
+                'type="text" id="rf_' + String(d) + '" value="' + String(li.RemindFrequency) + '" readonly>';
+            cell7.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
+                'type="text" id="rd_' + String(d) + '" value="' + String(li.RemindStart) + '" readonly>';
+            cell8.innerHTML = '<button type="button" onclick="verifyAndDelete(\'id_' + String(d) + '\')">Delete!</button>';
         }
     }
 </script>
@@ -71,6 +144,7 @@
 
 <table id="mainTable">
     <tr>
+        <th>SNO</th>
         <th>DocumentName</th>
         <th>UserName</th>
         <th>DocumentDescription</th>
@@ -80,11 +154,12 @@
         <th>Save/Delete</th>
     </tr>
     <tr>
-        <td><input type="text" id="dname" name="dname" value="DMV-License"></td>
-        <td><input type="text" id="uname" name="uname" value="Raja"></td>
-        <td><input type="text" id="ddesc" name="ddesc" value="California's Drivers License"></td>
+        <td><input type="text" id="sno" name="sno" value="o" readonly></td>
+        <td><input type="text" id="dname" name="dname" value=""></td>
+        <td><input type="text" id="uname" name="uname" value=""></td>
+        <td><input type="text" id="ddesc" name="ddesc" value=""></td>
         <td>
-            <input type="date" name="ded" placeholder="Document Expire" >
+            <input type="date" name="ded" id="ded" placeholder="Document Expire" >
         </td>
         <td>
             <input type="text" maxlength="2" size="2" id="rfnum" name="rfnum" value="1">
@@ -103,7 +178,7 @@
             </select>
         </td>
         <td>
-            <button type="button" onclick="alert('Save!')">Save!</button>
+            <button type="button" onclick="verifyAndSave()">Save!</button>
         </td>
     </tr>
 </table>
