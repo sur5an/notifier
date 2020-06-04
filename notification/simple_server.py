@@ -3,6 +3,22 @@ from urllib.parse import urlparse
 from document_db import Documents
 import json
 from cgi import parse_header, parse_multipart
+import logging
+
+
+def configure_logging():
+    my_log_file_name = "db/" + os.path.basename(__file__) + ".log"
+    logging.basicConfig(filename=my_log_file_name,
+                        filemode='a',
+                        format='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s',
+                        datefmt='%D %H:%M:%S',
+                        level=logging.INFO)
+
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s,%(msecs)03d  %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -56,6 +72,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 def start_server():
+    configure_logging()
     httpd = HTTPServer(('0.0.0.0', 1888), SimpleHTTPRequestHandler)
     httpd.serve_forever()
 

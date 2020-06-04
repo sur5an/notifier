@@ -95,6 +95,7 @@ def start_slack():
 
 
 def alert_cron():
+    configure_logging()
     Notify.setup_email()
     while True:
         Notify().check_notification()
