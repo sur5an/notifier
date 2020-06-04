@@ -108,10 +108,10 @@ class Documents:
 
     @staticmethod
     def format_date(in_val):
-        formats = ["%m/%d/%Y", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y %H"]
+        formats = ["%m/%d/%Y", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y %H", "%Y-%m-%d"]
         for f in formats:
             try:
-                ret_val = str(datetime.strptime(in_val.strip().replace('"', ''), f))
+                ret_val = datetime.strptime(in_val.strip().replace('"', ''), f)
                 return ret_val
             except ValueError:
                 continue
@@ -123,7 +123,7 @@ class Documents:
         for col in sorted(self.INSERT_COLUMNS):
             val = str(record.get(col))
             if col.lower().find("date") >= 0 or self.TABLE_DETAILS.get(col).get("type").find("date") >= 0:
-                val = Documents.format_date(val)
+                val = str(Documents.format_date(val))
             values.append('"' + val.replace('"', '\"') + '"')
         sql += ", ".join(values) + ")"
         self.execute(sql, False)
