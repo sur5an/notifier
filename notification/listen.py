@@ -8,12 +8,28 @@ from conversation import Conversation
 from multiprocessing import Process
 from notify import Notify
 import simple_server
+import logging
 
 commands = {
     "list": reminder.Reminder().slack_list,
     "add": reminder.Reminder().add_new_reminder,
     "delete": reminder.Reminder().remove_reminder
 }
+
+
+def configure_logging():
+    my_log_file_name = "db/" + os.path.basename(__file__) + ".log"
+    logging.basicConfig(filename=my_log_file_name,
+                        filemode='a',
+                        format='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s',
+                        datefmt='%D %H:%M:%S',
+                        level=logging.INFO)
+
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s,%(msecs)03d  %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
 
 
 @RTMClient.run_on(event='message')
@@ -86,6 +102,7 @@ def alert_cron():
 
 
 if __name__ == '__main__':
+    configure_logging()
     start_db()
     method_list = [start_slack, alert_cron, simple_server.start_server]
     for m in method_list:
