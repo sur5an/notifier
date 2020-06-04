@@ -108,7 +108,7 @@ class Documents:
 
     @staticmethod
     def format_date(in_val):
-        formats = ["%m/%d/%Y", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y %H", "%Y-%m-%d"]
+        formats = ["%m/%d/%Y", "%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M", "%m/%d/%Y %H", "%Y-%m-%d", "%Y-%m-%d %H:%M:%S"]
         for f in formats:
             try:
                 ret_val = datetime.strptime(in_val.strip().replace('"', ''), f)
