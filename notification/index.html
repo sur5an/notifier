@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: aqua;
+        }
+
+        .hero-image {
+            background-image: linear-gradient(rgba(211, 16, 16, 0.5), rgba(0, 0, 0, 0.5)), url("sun.jpg");
+            height: 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: relative;
+        }
+        table, th, td {
+            padding: 15px;
+        }
+    </style>
+
+    <title>DOCUMENTS</title>
+</head>
+<body onload="getAllData()">
+<script>
+
+
+    function getAllData() {
+        var url = "/all";
+        fetch(url).then(function (response) {
+            return response.json();
+        }).then(function (data) {
+            fillRestOfData(data)
+        });
+    }
+
+    function fillRestOfData(data) {
+        var table = document.getElementById('mainTable');
+        for (var d in data) {
+            var li = data[d];
+            var row = table.insertRow(2);
+
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+            var cell3 = row.insertCell(2);
+            var cell4 = row.insertCell(3);
+            var cell5 = row.insertCell(4);
+            var cell6 = row.insertCell(5);
+            var cell7 = row.insertCell(6);
+
+            cell1.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
+                'type="text" name="cell_' + String(d) + '" value="' + String(li.DocumentName) + '" readonly>';
+            cell2.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
+                'type="text" name="cell_' + String(d) + '" value="' + String(li.UserName) + '" readonly>';
+            cell3.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
+                'type="text" name="cell_' + String(d) + '" value="' + String(li.DocumentDescription) + '" readonly>';
+            cell4.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
+                'type="text" name="cell_' + String(d) + '" value="' + String(li.DateOfExpire) + '" readonly>' ;
+            cell5.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
+                'type="text" name="cell_' + String(d) + '" value="' + String(li.RemindFrequency) + '" readonly>';
+            cell6.innerHTML = '<input STYLE="color: #FFFFFF; background-color: #72A4D2;" ' +
+                'type="text" name="cell_' + String(d) + '" value="' + String(li.RemindStart) + '" readonly>';
+            cell7.innerHTML = '<button type="button" onclick="alert(\'Delete!\')">Delete!</button>';
+        }
+    }
+</script>
+<div class="hero-image">
+
+<table id="mainTable">
+    <tr>
+        <th>DocumentName</th>
+        <th>UserName</th>
+        <th>DocumentDescription</th>
+        <th>DateOfExpire</th>
+        <th>RemindFrequency</th>
+        <th>RemindStart Before</th>
+        <th>Save/Delete</th>
+    </tr>
+    <tr>
+        <td><input type="text" id="dname" name="dname" value="DMV-License"></td>
+        <td><input type="text" id="uname" name="uname" value="Raja"></td>
+        <td><input type="text" id="ddesc" name="ddesc" value="California's Drivers License"></td>
+        <td>
+            <input type="date" name="ded" placeholder="Document Expire" >
+        </td>
+        <td>
+            <input type="text" maxlength="2" size="2" id="rfnum" name="rfnum" value="1">
+            <select name="remind_freq" id="remind_freq">
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
+        </select></td>
+
+        <td>
+            <input type="text" maxlength="2" size="2" id="rsnum" name="rsnum" value="1">
+            <select name="remind_start" id="remind_start">
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+            </select>
+        </td>
+        <td>
+            <button type="button" onclick="alert('Save!')">Save!</button>
+        </td>
+    </tr>
+</table>
+</div>
+
+</body>
+</html>

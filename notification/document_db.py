@@ -219,6 +219,17 @@ class Documents:
             records.append(record)
         return records
 
+    def select_all(self):
+        select_sql = '%s order by Id' % self.SELECT
+        rc, resp = self.execute(select_sql)
+        records = list()
+        for k in resp:
+            record = dict()
+            for i in range(0, len(k)):
+                record[self.COLUMNS[i]] = k[i]
+            records.append(record)
+        return records
+
 
 if __name__ == '__main__':
     Documents().create_schema()
