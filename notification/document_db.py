@@ -219,7 +219,7 @@ class Documents:
         return True
 
     def select_user_records(self, user):
-        sql = '%s where UserName = "%s"' % (self.SELECT, user)
+        sql = '%s where UPPER(UserName) = UPPER("%s")' % (self.SELECT, user)
         rc, resp = self.execute(sql)
         records = list()
         for k in resp:
