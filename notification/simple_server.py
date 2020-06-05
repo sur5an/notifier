@@ -4,6 +4,7 @@ from document_db import Documents
 import json
 from cgi import parse_header, parse_multipart
 import logging
+import os
 
 
 def configure_logging():
@@ -31,6 +32,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if parsed_path.path == "/" or str(parsed_path.path).endswith("html")\
                 or str(parsed_path.path).endswith(".js"):
             self.default()
+        if parsed_path.path == "/sun.jpg":
+            img_name = self.path
+            img_file = open(img_name[1:], 'rb').read()
+            self.send_response(200)
+            self.send_header('Content-type', 'image/jpg')
+            self.end_headers()
+            self.wfile.write(img_file)
 
     def do_POST(self):
         parsed_path = urlparse(self.path)
