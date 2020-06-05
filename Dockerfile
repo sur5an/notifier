@@ -17,17 +17,20 @@ RUN \
 RUN \
     apt-get install vim -y
 
+RUN echo "America/Los_Angeles" > /etc/timezone
+
 RUN \
     apt-get install python3 -y \
     && apt-get install python3-pip -y \
     && apt-get install sqlite -y \
-    && apt install ssmtp -y
+    && apt install ssmtp -y \
+    && apt install net-tools -y \
+    && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install tzdata -y
 
 RUN \
     pip3 install slackclient
 
-
-
+RUN dpkg-reconfigure -f noninteractive tzdata
 
 RUN mkdir -p /var/notification/
 COPY notification/*  /var/notification/
