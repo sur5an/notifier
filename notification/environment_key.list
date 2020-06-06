@@ -1,0 +1,26 @@
+
+###############################################################
+# SLACK NOTIFICATION - LEAVING IT EMPTY WILL DISABLE IT
+SLACK_API_TOKEN=
+
+################################################################
+# EMAIL NOTIFICATION - LEAVING IT EMPTY WILL DISABLE IT
+EMAIL_ADDRESS=
+EMAIL_PASSWORD=
+
+###############################################################
+# twilio DETAILS FOR SENDING SMS/WHATS-APP
+ACCOUNT_SID=
+SMS_AUTH_TOKEN=
+FROM_NUMBER=
+TO_NUMBER=
+
+# THIS WILL ENABLE WHATS-APP
+ENABLE_WHATS_APP=
+# THIS WILL ENABLE SMS
+
+ENABLE_SMS=
+###############################################################
+
+
+
