@@ -32,10 +32,10 @@ class SMSNotification:
         if len(records) == 0:
             return None
 
-        response_message = "*%s*: _Records expiring or expired_" \
-                           "\n _please check the following documents_ \n\n" % cd
+        response_message = "%s: Records expiring or expired" \
+                           "\n please check the following documents \n\n" % cd
         for record in records:
-            response_message += "*%s*: _%s_\n" % (record["UserName"], record["DocumentName"])
+            response_message += "%s: %s\n" % (record["UserName"], record["DocumentName"])
         return response_message
 
     @staticmethod
