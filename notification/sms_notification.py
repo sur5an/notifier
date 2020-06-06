@@ -12,7 +12,7 @@ class SMSNotification:
 
     @staticmethod
     def update_feature():
-        if Util.check_env_variable(["ACCOUNT_SID", "SMS_AUTH_TOKEN", "SMS_FROM_NUMBER", "TO_NUMBER", "ENABLE_SMS"]) is \
+        if Util.check_env_variable(["ACCOUNT_SID", "SMS_AUTH_TOKEN", "SMS_FROM_NUMBER", "TO_NUMBER"]) is \
                 False:
             SMSNotification.disable_sms()
         else:

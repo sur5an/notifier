@@ -12,8 +12,7 @@ class WhatsAppNotification:
 
     @staticmethod
     def update_feature():
-        if Util.check_env_variable(["ACCOUNT_SID", "SMS_AUTH_TOKEN", "WHATS_APP_FROM_NUMBER", "TO_NUMBER",
-                                    "ENABLE_WHATS_APP"]) is False:
+        if Util.check_env_variable(["ACCOUNT_SID", "SMS_AUTH_TOKEN", "WHATS_APP_FROM_NUMBER", "TO_NUMBER"]) is False:
             WhatsAppNotification.disable_whats_app()
         else:
             WhatsAppNotification.SMS_AUTH_TOKEN = os.environ.get("SMS_AUTH_TOKEN")
