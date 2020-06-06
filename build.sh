@@ -1,3 +1,5 @@
-sudo docker build -t notifier .
+sudo docker stop notifier
 sudo docker rm notifier
-sudo docker run --name notifier -v /var/notfier_db:/var/notification/db --env SLACK_API_TOKEN=pass -d -t notifier
+sudo docker build -t notifier .
+sudo docker run --name notifier -p 1888:1888 --env-file environment_key.list -d -t notifier
+

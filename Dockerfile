@@ -5,7 +5,7 @@ FROM ubuntu:20.04
 LABEL maintainer="sur5an@yahoo.com"
 LABEL version="0.1"
 LABEL description="This is custom Docker Image for \
-my test raspberry pi project."
+document notification - pi project."
 
 # Install updates to base image
 RUN \
@@ -28,7 +28,8 @@ RUN \
     && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install tzdata -y
 
 RUN \
-    pip3 install slackclient
+    pip3 install slackclient \
+    && pip3 install twilio
 
 RUN dpkg-reconfigure -f noninteractive tzdata
 

@@ -2,17 +2,21 @@
 ###############################################################
 # SLACK NOTIFICATION - LEAVING IT EMPTY WILL DISABLE IT
 SLACK_API_TOKEN=
+# default it sends to channel name 'notification'
+SLACK_NOTIFY_CHANNEL=
 
 ################################################################
 # EMAIL NOTIFICATION - LEAVING IT EMPTY WILL DISABLE IT
 EMAIL_ADDRESS=
 EMAIL_PASSWORD=
+# DEFAULT EMAIL SERVER IS GMAIL
+EMAIL_SERVER=
 
 ###############################################################
 # twilio DETAILS FOR SENDING SMS/WHATS-APP
 ACCOUNT_SID=
 SMS_AUTH_TOKEN=
-FROM_NUMBER=
+SMS_FROM_NUMBER=
 TO_NUMBER=
 
 # THIS WILL ENABLE WHATS-APP
