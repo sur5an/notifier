@@ -43,7 +43,7 @@ class Notify:
 
         for nc in notification_channel:
             if Notify.LAST_NOTIFY_DATE.get(nc.__name__) is None or \
-                    check_date == Notify.LAST_NOTIFY_DATE.get(nc.__name__):
+                    check_date != Notify.LAST_NOTIFY_DATE.get(nc.__name__):
                 logging.info("calling " + str(nc.__name__))
                 if nc(to_notify, str(check_date).split()[0]) is True:
                     Notify.LAST_NOTIFY_DATE[nc.__name__] = check_date

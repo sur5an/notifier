@@ -25,7 +25,8 @@ RUN \
     && apt-get install sqlite -y \
     && apt install ssmtp -y \
     && apt install net-tools -y \
-    && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install tzdata -y
+    && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install tzdata -y \
+    && apt install cifs-utils -y
 
 RUN \
     pip3 install slackclient \
