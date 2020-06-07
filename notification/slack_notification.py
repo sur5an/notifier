@@ -6,6 +6,7 @@ import traceback
 from conversation import Conversation
 import reminder
 from util import Util
+import logging
 
 
 commands = {
@@ -47,7 +48,7 @@ def listener(**payload):
                             match = True
             except Exception as e:
                 traceback.print_exc()
-                print(f"Got an error inside module: " + str(e))
+                logging.error(f"Got an error inside module: " + str(e))
                 msg = "Something went wrong - you might have found a bug please report it.\n - Thanks"
             if not match:
                 msg += "`I didn't get you. can you try some thing else.`"
@@ -59,7 +60,7 @@ def listener(**payload):
     except Exception as e:
         # You will get a SlackApiError if "ok" is False
         traceback.print_exc()
-        print(f"Got an error: " + str(e))
+        logging.error(f"Got an error: " + str(e))
 
 
 class SlackNotification:
@@ -99,16 +100,18 @@ class SlackNotification:
     def notify(tn, ref_date):
         message = SlackNotification.get_slack_message(tn, ref_date)
         if message is None:
-            return
+            return True
         client = WebClient(token=os.environ['SLACK_API_TOKEN'])
 
         try:
             response = client.chat_postMessage(
                 channel='#%s' % SlackNotification.SLACK_CHANNEL_USER,
                 text="%s" % message)
-            print("Send message to slack: %s" % response.get("ok"))
+            logging.info("Send message to slack: %s" % response)
+            return True
         except SlackApiError as e:
-            print(f"Got an error: {e.response['error']}")
+            logging.error(f"Got an error: {e.response['error']}")
+        return False
 
 
 if __name__ == '__main__':

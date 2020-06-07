@@ -35,14 +35,22 @@ def alert_cron():
     Notify.setup()
     while True:
         Notify().check_notification()
-        time.sleep(60*60*12)
+        time.sleep(60*60*3)
 
 
 if __name__ == '__main__':
     configure_logging()
     start_db()
     method_list = [SlackNotification.slack_setup, alert_cron, simple_server.start_server]
+    processes = list()
     for m in method_list:
         p = Process(target=m, args=(), name=str(m.__name__))
         print(p.name)
         p.start()
+        processes.append(p)
+
+    while True:
+        for p in processes:
+            logging.info("Processes: %s -- %s" % (p.name, p.is_alive()))
+        time.sleep(60*60*3)
+

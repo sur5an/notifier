@@ -1,6 +1,7 @@
 from twilio.rest import Client
 import os
 from util import Util
+import logging
 
 
 class WhatsAppNotification:
@@ -41,13 +42,19 @@ class WhatsAppNotification:
     def notify_through_whats_app(recs, ref_date):
         msg = WhatsAppNotification.get_whats_app_message(recs, ref_date)
         if msg is None:
-            return
-        client = Client(WhatsAppNotification.ACCOUNT_SID, WhatsAppNotification.SMS_AUTH_TOKEN)
+            return True
 
-        message = client.messages.create(
-            body=str(msg),
-            from_=str(WhatsAppNotification.WHATS_APP_FROM_NUMBER),
-            to=str(WhatsAppNotification.TO_NUMBER)
-        )
+        try:
+            client = Client(WhatsAppNotification.ACCOUNT_SID, WhatsAppNotification.SMS_AUTH_TOKEN)
 
-        print(message.sid)
+            message = client.messages.create(
+                body=str(msg),
+                from_=str(WhatsAppNotification.WHATS_APP_FROM_NUMBER),
+                to=str(WhatsAppNotification.TO_NUMBER)
+            )
+            logging.info("Whats app message sent: " + str(message))
+            return True
+        except Exception as e:
+            logging.error("Whats app message failed")
+            logging.error(e)
+            return False

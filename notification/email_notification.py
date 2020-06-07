@@ -1,6 +1,7 @@
 import smtplib
 import os
 from util import Util
+import logging
 
 message = """From: SURSAN-PI <EMAIL_ADDRESS>
 To: Sudharsan <EMAIL_ADDRESS>
@@ -66,9 +67,8 @@ class EMailNotification:
                     break
             fin = open(file, "w+")
             fin.write("%s" % hostname.strip())
-            fin.write('\nUseSTARTTLS=YES\n%s' % Util.get_env_variable("EMAIL_SERVER", "mailhub=smtp.gmail.com:587"))
+            fin.write('\nUseSTARTTLS=YES\nmailhub=%s' % Util.get_env_variable("EMAIL_SERVER", "smtp.gmail.com:587"))
             fin.write("\nAuthUser=%s" % EMailNotification.EMAIL_ADDRESS)
-            fin.write("\nAuthPass=%s" % EMailNotification.EMAIL_PASSWORD)
             fin.close()
 
     @staticmethod
@@ -90,7 +90,7 @@ class EMailNotification:
     def send_email(tn, dated):
         body = EMailNotification.get_email_message(tn)
         if body is None:
-            return
+            return True
         msg = ""
         for line in message.split('\n'):
             if line.find("EMAIL_ADDRESS") >= 0:
@@ -101,9 +101,16 @@ class EMailNotification:
                 line = line.replace("MESSAGE_BODY", body)
             msg += line + "\n"
 
-        smtp_server = smtplib.SMTP('smtp.gmail.com', '587')
-        smtp_server.starttls()
-        smtp_server.login(EMailNotification.EMAIL_ADDRESS, EMailNotification.EMAIL_PASSWORD)
-        smtp_server.sendmail(EMailNotification.EMAIL_ADDRESS, EMailNotification.EMAIL_ADDRESS, msg)
-        print("Successfully sent email")
+        try:
+            smtp_details = str(Util.get_env_variable("EMAIL_SERVER", "smtp.gmail.com:587"))
+            smtp_server = smtplib.SMTP(smtp_details.split(':')[0], smtp_details.split(':')[1])
+            smtp_server.starttls()
+            smtp_server.login(EMailNotification.EMAIL_ADDRESS, EMailNotification.EMAIL_PASSWORD)
+            smtp_server.sendmail(EMailNotification.EMAIL_ADDRESS, EMailNotification.EMAIL_ADDRESS, msg)
+            logging.info("Successfully sent email")
+        except Exception as e:
+            logging.info("email failed")
+            logging.info(e)
+            return False
+        return True
 

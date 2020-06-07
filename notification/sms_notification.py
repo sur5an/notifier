@@ -1,6 +1,7 @@
 from twilio.rest import Client
 import os
 from util import Util
+import logging
 
 
 class SMSNotification:
@@ -42,13 +43,19 @@ class SMSNotification:
     def notify_through_sms(recs, ref_date):
         msg = SMSNotification.get_sms_message(recs, ref_date)
         if msg is None:
-            return
-        client = Client(SMSNotification.ACCOUNT_SID, SMSNotification.SMS_AUTH_TOKEN)
+            return True
 
-        message = client.messages.create(
-            body=str(msg),
-            from_=str(SMSNotification.SMS_FROM_NUMBER),
-            to=str(SMSNotification.TO_NUMBER)
-        )
+        try:
+            client = Client(SMSNotification.ACCOUNT_SID, SMSNotification.SMS_AUTH_TOKEN)
 
-        print(message.sid)
+            message = client.messages.create(
+                body=str(msg),
+                from_=str(SMSNotification.SMS_FROM_NUMBER),
+                to=str(SMSNotification.TO_NUMBER)
+            )
+            logging.info("SMS Send: " + str(message))
+        except Exception as e:
+            logging.error("Sending SMS failed")
+            logging.error(e)
+            return False
+        return True
