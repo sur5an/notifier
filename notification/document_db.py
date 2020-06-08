@@ -230,7 +230,7 @@ class Documents:
         return records
 
     def select_all(self):
-        select_sql = '%s order by Id desc' % self.SELECT
+        select_sql = '%s order by DateOfExpire desc' % self.SELECT
         rc, resp = self.execute(select_sql)
         records = list()
         for k in resp:
