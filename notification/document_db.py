@@ -90,8 +90,11 @@ class Documents:
             except:
                 pass
 
-    def execute(self, sql, fetch=True):
-        self.cur.execute(sql)
+    def execute(self, sql, fetch, *var):
+        if len(var) > 0:
+            self.cur.execute(sql, var)
+        else:
+            self.cur.execute(sql)
         if fetch:
             return True, self.cur.fetchall()
         else:
@@ -102,8 +105,8 @@ class Documents:
         self.cur.execute(self.CREATE)
 
     def delete(self, doc_id):
-        sql = "delete from %s where Id=%s" % (self.TABLE, doc_id)
-        self.execute(sql)
+        sql = "delete from %s where Id=?" % self.TABLE
+        self.execute(sql, True, doc_id)
         self.conn.commit()
 
     @staticmethod
@@ -124,9 +127,13 @@ class Documents:
             val = str(record.get(col))
             if col.lower().find("date") >= 0 or self.TABLE_DETAILS.get(col).get("type").find("date") >= 0:
                 val = str(Documents.format_date(val))
-            values.append('"' + val.replace('"', '\"') + '"')
-        sql += ", ".join(values) + ")"
-        self.execute(sql, False)
+            values.append(val)
+        new_values = list()
+        for i in range(0, len(values)):
+            new_values.append("?")
+        sql += ", ".join(new_values) + ")"
+
+        self.execute(sql, False, *values)
         if commit:
             self.conn.commit()
 
@@ -148,15 +155,15 @@ class Documents:
     def select_users(self):
         sql = 'select distinct UserName from %s' % self.TABLE
 
-        rc, resp = self.execute(sql)
+        rc, resp = self.execute(sql, True)
         records = list()
         for a in resp:
             records.append(a[0])
         return records
 
     def delete_document(self, doc_id):
-        sql = 'delete from %s where Id=%s' % (self.TABLE, doc_id)
-        self.execute(sql)
+        sql = 'delete from %s where Id=?' % self.TABLE
+        self.execute(sql, True, doc_id)
         self.conn.commit()
 
     @staticmethod
@@ -179,7 +186,7 @@ class Documents:
         recs = list()
         expired = list()
         sql = '%s' % self.SELECT
-        rc, resp = self.execute(sql)
+        rc, resp = self.execute(sql, True)
         for y in resp:
             record = dict()
             for i in range(0, len(y)):
@@ -211,16 +218,17 @@ class Documents:
         return recs, expired
 
     def is_document_present(self, doc_id):
-        sql = 'select * from %s where Id=%s' % (self.TABLE, doc_id)
+        sql = 'select * from %s where Id=?' % self.TABLE
 
-        rc, resp = self.execute(sql)
+        rc, resp = self.execute(sql, True, doc_id)
         if len(resp) == 0:
             return False
         return True
 
     def select_user_records(self, user):
-        sql = '%s where UPPER(UserName) = UPPER("%s")' % (self.SELECT, user)
-        rc, resp = self.execute(sql)
+
+        sql = "%s where UPPER(UserName) = ?" % self.SELECT
+        rc, resp = self.execute(sql, True, user.upper())
         records = list()
         for k in resp:
             record = dict()
@@ -231,7 +239,7 @@ class Documents:
 
     def select_all(self):
         select_sql = '%s order by DateOfExpire desc' % self.SELECT
-        rc, resp = self.execute(select_sql)
+        rc, resp = self.execute(select_sql, True)
         records = list()
         for k in resp:
             record = dict()
@@ -309,3 +317,10 @@ if __name__ == '__main__':
     s, d = Documents().get_records_to_notify(datetime.combine(datetime.today(), datetime.min.time()))
     for rec in s:
         print(rec)
+        Documents().delete(rec['Id'])
+    Documents().insert(rec, True)
+    s = Documents().select_user_records("Raja")
+    for rec in s:
+        print(rec)
+        Documents().delete_document(rec['Id'])
+        print(Documents().is_document_present(rec['Id']))
